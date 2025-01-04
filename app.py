@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'cfc5d72c1029ebefc518a5485d8db1593b08d75d3073e375'
 
 # Usando SQLite como banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///fluxo_caixa.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('postgresql://fluxo_caixa_user:PD4jbKbqlqvYx5seEQorj89UlKTixv09@dpg-ctsb1ua3esus73doo21g-a/fluxo_caixa') or 'sqlite:///fluxo_caixa.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicializando o banco de dados
@@ -51,9 +51,10 @@ class Despesa(db.Model):
 
     user = db.relationship('User', backref=db.backref('despesas', lazy=True))
 
-# Criar o banco de dados
-with app.app_context():
+@app.before_first_request
+def create_tables():
     db.create_all()
+
 
 
 # Página Inicial (exibe as despesas)
@@ -70,18 +71,28 @@ def register():
         username = request.form['username']
         password = request.form['password']
         
-        # Criptografando a senha
-        hashed_password = generate_password_hash(password, method='sha256')
+        # Verificar se o nome de usuário já existe
+        user_exists = User.query.filter_by(username=username).first()
+        if user_exists:
+            flash('O nome de usuário já está em uso!', 'danger')
+            return redirect(url_for('register'))
+        
+        # Criptografando a senha (usando o padrão pbkdf2:sha256)
+        hashed_password = generate_password_hash(password)
         
         # Criando um novo usuário
         new_user = User(username=username, password=hashed_password)
         
-        # Adicionando no banco de dados
-        db.session.add(new_user)
-        db.session.commit()
-        
-        flash('Cadastro realizado com sucesso!', 'success')
-        return redirect(url_for('index'))
+        try:
+            # Adicionando no banco de dados
+            db.session.add(new_user)
+            db.session.commit()
+            flash('Cadastro realizado com sucesso!', 'success')
+            return redirect(url_for('login'))  # Redirecionar para a página de login após o cadastro
+        except Exception as e:
+            db.session.rollback()  # Reverter qualquer alteração em caso de erro
+            flash(f'Erro ao cadastrar o usuário: {e}', 'danger')
+            return redirect(url_for('register'))
     
     return render_template('register.html')
 
@@ -95,11 +106,12 @@ def login():
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
 
-        if user and user.password == password:  # Aqui, utilize hashing de senhas em produção
+        if user and check_password_hash(user.password, password):
             login_user(user)
             return redirect(url_for('index'))
         else:
             return "Usuário ou senha inválidos", 401
+
 
     return render_template('login.html')
 

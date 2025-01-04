@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
 # Inicializando o app Flask
 app = Flask(__name__)
 
@@ -9,7 +10,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'cfc5d72c1029ebefc518a5485d8db1593b08d75d3073e375'
 
 # Usando SQLite como banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fluxo_caixa.db'  # O banco será um arquivo .db na pasta do projeto
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///fluxo_caixa.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicializando o banco de dados

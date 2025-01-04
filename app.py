@@ -53,7 +53,7 @@ class Despesa(db.Model):
     user = db.relationship('User', backref=db.backref('despesas', lazy=True))
 
 # Função para criar o banco de dados e as tabelas antes do primeiro pedido
-@app.before_first_request
+@app.before_request
 def create_tables():
     db.create_all()
 

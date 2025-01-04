@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+
 # Inicializando o app Flask
 app = Flask(__name__)
 
@@ -35,13 +36,13 @@ def criar_despesa(categoria, valor, descricao, user_id):
     db.session.add(despesa)
     db.session.commit()
 
-# Modelo de Usuário (sem usar classe, apenas função para criar)
+# Modelo de Usuário
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
 
-# Modelo de Despesa (sem usar classe, apenas função)
+# Modelo de Despesa
 class Despesa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     categoria = db.Column(db.String(50), nullable=False)
@@ -51,13 +52,12 @@ class Despesa(db.Model):
 
     user = db.relationship('User', backref=db.backref('despesas', lazy=True))
 
+# Função para criar o banco de dados e as tabelas antes do primeiro pedido
 @app.before_first_request
 def create_tables():
     db.create_all()
 
-
-
-# Página Inicial (exibe as despesas)
+# Página Inicial
 @app.route('/')
 @login_required
 def index():
@@ -96,8 +96,6 @@ def register():
     
     return render_template('register.html')
 
-
-
 # Rota de Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -111,7 +109,6 @@ def login():
             return redirect(url_for('index'))
         else:
             return "Usuário ou senha inválidos", 401
-
 
     return render_template('login.html')
 

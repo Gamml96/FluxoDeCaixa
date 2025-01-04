@@ -1,12 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-
+from werkzeug.security import generate_password_hash, check_password_hash
 # Inicializando o app Flask
 app = Flask(__name__)
 
 # Configurações do banco de dados e segredo da aplicação
-app.config['SECRET_KEY'] = 'mysecretkey'
+app.config['SECRET_KEY'] = 'cfc5d72c1029ebefc518a5485d8db1593b08d75d3073e375'
 
 # Usando SQLite como banco de dados
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fluxo_caixa.db'  # O banco será um arquivo .db na pasta do projeto
@@ -50,12 +50,41 @@ class Despesa(db.Model):
 
     user = db.relationship('User', backref=db.backref('despesas', lazy=True))
 
+# Criar o banco de dados
+with app.app_context():
+    db.create_all()
+
+
 # Página Inicial (exibe as despesas)
 @app.route('/')
 @login_required
 def index():
     despesas = Despesa.query.filter_by(user_id=current_user.id).all()
     return render_template('index.html', despesas=despesas)
+
+# Rota de Cadastro
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Criptografando a senha
+        hashed_password = generate_password_hash(password, method='sha256')
+        
+        # Criando um novo usuário
+        new_user = User(username=username, password=hashed_password)
+        
+        # Adicionando no banco de dados
+        db.session.add(new_user)
+        db.session.commit()
+        
+        flash('Cadastro realizado com sucesso!', 'success')
+        return redirect(url_for('index'))
+    
+    return render_template('register.html')
+
+
 
 # Rota de Login
 @app.route('/login', methods=['GET', 'POST'])

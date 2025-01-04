@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Controle de Despesas</title>
+</head>
+<body>
+    <h1>Despesas</h1>
+    <ul>
+        {% for despesa in despesas %}
+        <li>{{ despesa.categoria }} - R$ {{ despesa.valor }} - {{ despesa.descricao }}</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{{ url_for('add') }}">Adicionar Despesa</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>
